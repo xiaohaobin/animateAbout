@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			.c{
+				width: 200px;
+				height: 200px;
+				border: 5px solid olivedrab;
+				border-radius:50% ;
+				margin: 100px auto;
+			}
+			.test{
+				width: 100px;
+				height: 100px;
+				background: red;
+			}
+			
+		</style>
+	</head>
+	<body>
+		<div class="test"></div>
+		<div class="c">
+			
+		</div>
+		<div class="random"></div>
+		<script src="../anime.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var c = anime({
+				targets: '.c',
+				easing: 'easeOutQuad',
+//				direction: 'alternate',
+				duration: 2000,//动画运行时间
+				loop: true,
+				scaleX: {
+					value: 2, //代表缩放的值(现实球掉落地上之后变形)
+				},
+				scaleY: {
+					value:2, //代表缩放的值(现实球掉落地上之后变形)
+				},
+				complete: function() {
+					c.restart();
+				}
+			});
+			
+			//可以重定义宽高
+			anime({
+			  targets: '.test',
+			  width:200,
+			  translateX: [50, 250], // Will start at 50px and end at 250px
+			  easing: 'easeOutQuad',
+			});
+			
+			
+			
+		</script>
+	</body>
+</html>

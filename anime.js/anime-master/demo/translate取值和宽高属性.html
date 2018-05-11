@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			.c {
+				width: 200px;
+				height: 200px;
+				border: 5px solid olivedrab;
+				border-radius: 50%;
+				margin: 100px auto;
+			}
+			
+			.test {
+				width: 100px;
+				height: 100px;
+				background: red;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="test demo1"></div>
+		<div class="c">
+
+		</div>
+		<div class="random"></div>
+		<div class="test demo2">
+
+		</div>
+		<button type="button" id="seek">seek</button>
+		
+		<script src="../anime.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			//可以重定义宽高
+			anime({
+				targets: '.demo1',
+				width: 200,
+				translateX: [50, 250], // Will start at 50px and end at 250px
+				easing: 'easeOutQuad',
+			});
+
+			//随机范围数
+			var d = anime({
+				targets: '.c',
+				translateX: function(el, index) {
+					return anime.random(5, 5000); // Will set a random value from 50 to 100 to each divs
+
+				},
+
+				duration: 5000, //动画运行时间
+				loop: true,
+				direction: 'alternate', //direction属性定义是否应该轮流反向播放动画。有三个值default、alternate和reverse。alternate表示动画应该轮流反向播放。reverse表示反方向运行。
+				easing: 'easeInCubic', //最后一个属性是easing，它是用来定义动画运行速度曲线的，与CSS3中的动画曲线一样。
+
+			});
+
+			
+		</script>
+	</body>
+
+</html>

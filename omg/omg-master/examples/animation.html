@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>omg.js | Animation</title>
+	<style>
+		html, body {
+			margin: 0;
+			padding: 0;
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+		}
+		#canvas {
+			margin: 0;
+			background-color: #fff;
+		}
+
+	</style>
+</head>
+<body>
+<div id="fps"></div>
+<div class="container">
+		<canvas id="canvas"></canvas>
+</div>
+<script src="./omg.min.js"></script>
+<script>
+	var world = omg({
+		element: document.getElementById('canvas'),
+		width: document.body.clientWidth,
+		height: document.body.clientHeight,
+		enableGlobalTranslate: false
+	});
+
+	world.init();
+
+	var rect1 = world.rectangle({
+		x: 200,
+		y: 500,
+		width: 100,
+		height: 100,
+		zindex: 2,
+		color: '#ef8376'
+	});
+  var rect2 = world.rectangle({
+		x: 200,
+		y: 500,
+		width: 100,
+		height: 100,
+		zindex: 2,
+		color: '#ef5412'
+	});
+
+  function move(cur, delay) {
+  	cur.animateTo({
+			x: 800,
+			y: 200,
+			width: 200,
+			height: 200
+		}, {
+			easing: 'bounceOut',
+			duration: 500,
+			delay: delay,
+			onFinish: function() {
+				setTimeout(function() {
+					cur.animateTo({
+						x: 200,
+						y: 500,
+						width: 100,
+						height: 100
+					}, {
+						easing: 'bounceOut',
+						duration: 500,
+						onFinish: function() {
+							setTimeout(function() {
+  							move(cur, delay);
+							}, 1000);
+						}
+					});
+				}, 1000);
+			}
+		});
+  }
+
+	world.addChild([rect1, rect2]);
+
+	world.show();
+
+	move(rect1, 0);
+	setTimeout(function() {
+		move(rect2, 0);
+	}, 500);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<link rel="stylesheet" href="css/style.css">
+		<style type="text/css">
+			#main {
+				border: 1px solid #ddd;
+				/*display: none;*/
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<button type="button" id="stop">stop</button>
+		<button id="connect" onclick="Connect();">Connect</button>
+		<button id="close" onclick="Close();">Close Connect</button>
+		<div class="controlBox">
+			<div class="radar">
+				<div id="kuo"></div>
+			</div>
+			<canvas class="main" id="main" width="800" height="800"></canvas>
+		</div>
+
+		<div style=" width:88%;margin:30px auto; color:blue;" id="div_html">
+		</div>
+		<script type="text/javascript">
+			var s = "";
+			s += " 网页可见区域宽：" + document.body.clientWidth + "<br />";
+			s += " 网页可见区域高：" + document.body.clientHeight + "<br />";
+			s += " 网页可见区域宽：" + document.body.offsetWidth + " (包括边线和滚动条的宽)" + "<br />";
+			s += " 网页可见区域高：" + document.body.offsetHeight + " (包括边线的宽)" + "<br />";
+			s += " 网页正文全文宽：" + document.body.scrollWidth + "<br />";
+			s += " 网页正文全文高：" + document.body.scrollHeight + "<br />";
+			s += " 网页被卷去的高(ff)：" + document.body.scrollTop + "<br />";
+			s += " 网页被卷去的高(ie)：" + document.documentElement.scrollTop + "<br />";
+			s += " 网页被卷去的左：" + document.body.scrollLeft + "<br />";
+			s += " 网页正文部分上：" + window.screenTop + "<br />";
+			s += " 网页正文部分左：" + window.screenLeft + "<br />";
+			s += " 屏幕分辨率的高：" + window.screen.height + "<br />";
+			s += " 屏幕分辨率的宽：" + window.screen.width + "<br />";
+			s += " 屏幕可用工作区高度：" + window.screen.availHeight + "<br />";
+			s += " 屏幕可用工作区宽度：" + window.screen.availWidth + "<br />";
+			s += " 你的屏幕设置是 " + window.screen.colorDepth + " 位彩色" + "<br />";
+			s += " 你的屏幕设置 " + window.screen.deviceXDPI + " 像素/英寸" + "<br />";
+
+			document.getElementById("div_html").innerHTML = s;
+		</script>
+		<script src="dist/fabric.js" type="text/javascript" charset="utf-8"></script>
+		<script src="src/gradient.class.js" type="text/javascript" charset="utf-8"></script>
+		<script src="dist/underscore.js" type="text/javascript" charset="utf-8"></script>
+		<script src="dist/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+
+		<script type="text/javascript">
+			var socket,w,h,r, 
+				sendMsg = {
+					"type": "a001",
+					"deviceID": "DZ1712120100000022"
+				}, //ws msg
+				n = 0, //生成多少个点的计数
+				times = 0, //执行循环函数的计数
+				timer = null; //定时器变量	
+				
+			if(window.screen.availWidth <= 768){
+				w = h = window.screen.availWidth;
+				$(".radar").css({
+					"left":0,
+					"top":0,
+					"transform":"inherit",
+					"width":w + "px",
+					"height":h + "px"
+				});
+			}else{
+				w = h = 800;
+			}
+			r = (w/2);
+			document.getElementById("main").width = w;
+			document.getElementById("main").height = h;
+			var canvas = new fabric.Canvas('main');
+							
+
+			//圆形
+			var circle = new fabric.Circle({
+				radius: r, //半径
+				fill: 'transparent',
+				left: 0,
+				top: 0,
+				stroke: "green"
+			});
+			canvas.add(circle);
+
+			document.getElementById("stop").onclick = function() {
+				clearTimeout(timer);
+			}
+
+			//循环执行函数
+			var throttle = _.throttle(function() {
+				loop();
+			}, 100);
+			throttle();
+
+			//将生成的点渲染在画布上
+			function loop() {
+				var oPos = pos(_.random(1, w), _.random(1, w), r);
+				console.log(oPos);
+				if(oPos) createD(oPos.x, oPos.y);
+
+				timer++;
+				timer = setTimeout(loop, 100);
+				if(n >= 200) {
+					clearTimeout(timer);
+					console.log("函数执行次数：" + timer);
+					console.log("生成点：" + n);
+					return false;
+				}
+			}
+
+			//循环生成若干个点
+			function createD(x, y) {
+				var cir = new fabric.Circle({
+					radius: 3, //半径
+					fill: 'yellow',
+					left: x,
+					top: y,
+				});
+
+				canvas.add(
+					cir
+				);
+				//改变其fill值
+				setTimeout(function() {
+					canvas.remove(cir); //删除之前的点
+					var cir2 = new fabric.Circle({
+						radius: 3, //半径
+						fill: '#ddd',
+						left: x,
+						top: y,
+					});
+
+					canvas.add(
+						cir2
+					);
+					//改变其fill值
+					setTimeout(function() {
+						canvas.remove(cir2); //删除之前的点
+					}, 1 * 1000 * 2)
+				}, 2 * 1000 * 2)
+				n++;
+			}
+			//向量定位函数（判断随机生成的坐标是否在圆的范围之内）
+			/*
+			 param:x点的水平坐标，y点的垂直坐标，r圆半径
+			 * */
+			function pos(x, y, r) {
+				if(x < r && y < r) {
+					var c = Math.sqrt(Math.pow((r - x), 2) + Math.pow((r - y), 2));
+					if(c >= (r - 10)) {
+						return false;
+					} else {
+						return {
+							"x": x,
+							"y": y
+						};
+					}
+				}
+				if(x > r && y < r) {
+					var c = Math.sqrt(Math.pow((x - r), 2) + Math.pow((r - y), 2));
+					if(c >= (r - 10)) {
+						return false;
+					} else {
+						return {
+							"x": x,
+							"y": y
+						};
+					}
+				}
+				if(x > r && y > r) {
+					var c = Math.sqrt(Math.pow((x - r), 2) + Math.pow((y - r), 2));
+					if(c >= (r - 10)) {
+						return false;
+					} else {
+						return {
+							"x": x,
+							"y": y
+						};
+					}
+				}
+				if(x < r && y > r) {
+					var c = Math.sqrt(Math.pow((r - x), 2) + Math.pow((y - r), 2));
+					if(c >= (r - 10)) {
+						return false;
+					} else {
+						return {
+							"x": x,
+							"y": y
+						};
+					}
+				}
+				if(x == r && y == r) {
+					return false;
+				}
+			}
+
+			//ws			
+			function Connect() {
+				try {
+					socket = new WebSocket('ws://123.58.43.17:9501');
+				} catch(e) {
+					console.log('ws error');
+					return;
+				}
+				socket.onopen = sOpen;
+				socket.onerror = sError;
+				socket.onmessage = sMessage;
+				socket.onclose = sClose;
+			}
+
+			function sOpen() {
+				console.log('connect success!');
+				socket.send(JSON.stringify(sendMsg));
+			}
+
+			function sError(e) {
+				console.log("error " + e);
+			}
+
+			function sMessage(msg) {
+				console.log(JSON.parse(msg.data));
+			}
+
+			function sClose(e) {
+				console.log("connect closed:" + e.code);
+			}
+
+			function Close() {
+				socket.close();
+			}
+		</script>
+	</body>
+
+</html>

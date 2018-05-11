@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			.box-style{
+				width: 200px;
+				height: 200px;
+				display: inline-block;
+				margin: 5px;
+				background: #000000;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="svgContainer"></div>
+		<script src="../bodymovin4.80/bodymovin.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var animateData = [
+				"../json/rejection.json",
+				"../json/dyslexia.json",
+				"../json/estimate.json",
+				"../json/inattentive.json",
+//				"../json/mnemonics.json",
+				"../json/phonological.json",
+				"../json/confusion.json"
+			];
+			var svgContainer = document.getElementById("svgContainer");
+//			var animItem = bodymovin.loadAnimation({
+//				wrapper: svgContainer,
+//				animType: "svg",
+//				loop: true,
+//				path: "../json/rejection.json"
+//			});
+			var tem = "";
+			for (var i=0;i<animateData.length;i++) {
+				tem += '<div id="box_'+i+'" class="box-style"></div>';
+			}
+			svgContainer.innerHTML = tem;
+			for (var i=0;i<animateData.length;i++) {
+				bodymovin.loadAnimation({
+					wrapper: document.getElementById("box_"+i),
+					animType: "svg",
+					loop: true,
+					path: animateData[i]
+				});
+			}
+		</script>
+	</body>
+</html>

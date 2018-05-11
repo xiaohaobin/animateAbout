@@ -1,0 +1,42 @@
+{
+  "name": "omg.js",
+  "version": "3.0.0-beta.4",
+  "keywords": [
+    "canvas",
+    "event",
+    "drag",
+    "drop",
+    "draw"
+  ],
+  "description": "Oh my goodness! Awesome Canvas Render Library.",
+  "main": "dist/omg.js",
+  "scripts": {
+    "build": "rm -rf dist/ && node rollup.config.js --beauty && node rollup.config.js --minify",
+    "dev": "rm -rf dist/ && node rollup.config.js --example",
+    "eslint": "eslint src/**/ --ext .js --cache",
+    "release": "cd scripts && node release.js"
+  },
+  "author": "PengJiyuan <pjy@isweety.me>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PengJiyuan/omg.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PengJiyuan/omg.js/issues"
+  },
+  "homepage": "https://github.com/PengJiyuan/omg.js#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "colors": "^1.1.2",
+    "eslint": "^4.10.0",
+    "fs-extra": "^4.0.2",
+    "rollup": "^0.50.0",
+    "rollup-plugin-buble": "^0.15.0",
+    "rollup-plugin-json": "^2.3.0",
+    "rollup-plugin-uglify": "^2.0.1"
+  },
+  "files": [
+    "dist/*"
+  ]
+}

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>test</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="Keywords" content="HTML,model,test">
+		<meta name="Description" content="special effect">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style type="text/css">
+			html,
+			body {
+				font-size: 14px;
+				margin: 0px;
+				padding: 0px;
+			}
+			
+			li {
+				list-style: none;
+			}
+			
+			img {
+				border: 0px;
+			}
+			
+			a {
+				text-decoration: none;
+			}
+			
+			.clear {
+				clear: both;
+			}
+			
+			#center {
+				/*width: 600px;*/
+				margin: 0 auto;
+				padding-top: 50px;
+				position: relative;
+			}
+			
+			#c1 {
+				background-color: #333;	
+				/*-webkit-border-radius:50%;
+				-moz-border-radius:50%;
+				-o-border-radius:50%;
+				-ms-border-radius:50%;					
+				border-radius:50%;*/
+			}
+			/*@media screen and (max-width:1370px) and (min-width:1280px){
+				#c1{
+					width: 600px;
+					height: 600px;
+				}
+			}
+			@media screen and (max-width:1450px) and (min-width:1380px){
+				#c1{
+					width: 600px;
+					height: 600px;
+				}
+			}
+			@media screen and (max-width:1950px) and (min-width:1460px){
+				#c1{
+					width: 600px;
+					height: 600px;
+				}
+			}*/
+		</style>
+	</head>
+
+	<body>
+		<div id="center">
+			<canvas id="c1"  height="600px" width="600px"></canvas><br/>
+			<button id="btn1" type="button">加载雷达</button>
+			<button id="btn2" type="button">停止雷达</button>
+			<button id="btn3" type="button">清除动画</button>
+			<button id="btn4" onclick="stopCreateArr();" type="button">停止生成数组</button>
+		</div>
+
+		<script type="text/javascript">
+			var timer = null;
+			var timer2 = null;
+			var dataArr = [];
+			
+			var sColor = "";
+			function getColor(){
+				sColor = "#c00";
+				console.log(sColor);
+				setTimeout(function(){
+					sColor = "#fff";
+					console.log(sColor);
+				},1000);				
+			}
+			timer2 = setInterval(getColor,2000);
+			
+			//每一秒生成一个随机数组存在大数组之中
+			function addNum(maxW,maxH){
+//				dataArr.push([randNum(0,600),randNum(0,600)]);
+				dataArr[dataArr.length] = [randNum(0,600),randNum(0,600)];
+				timer = setTimeout(function(){
+//					console.log(dataArr);
+					addNum(maxW,maxH);
+					if(dataArr.length >= 100){
+						clearTimeout(timer);
+					}
+				},1000);
+			}
+			addNum();
+			
+			function stopCreateArr(){
+				clearTimeout(timer);
+			}
+			
+			//每两秒干掉数组的第一个值
+			function shiftArr(){
+				if(dataArr.length > 0){
+					dataArr.shift();
+				}
+				setTimeout(function(){
+//					console.log(dataArr);
+					shiftArr();
+				},3000);
+			}
+			shiftArr();
+			/*关于移动端的判断 */
+			function isMoblie(fnMobile,fnPc){
+				  var sUserAgent = navigator.userAgent.toLowerCase();
+				  var bIsIpad = sUserAgent.match(/ipad/i) == "ipad";
+				  var bIsIphoneOs = sUserAgent.match(/iphone os/i) == "iphone os";
+				  var bIsMidp = sUserAgent.match(/midp/i) == "midp";
+				  var bIsUc7 = sUserAgent.match(/rv:1.2.3.4/i) == "rv:1.2.3.4";
+				  var bIsUc = sUserAgent.match(/ucweb/i) == "ucweb";
+				  var bIsAndroid = sUserAgent.match(/android/i) == "android";
+				  var bIsCE = sUserAgent.match(/windows ce/i) == "windows ce";
+				  var bIsWM = sUserAgent.match(/windows mobile/i) == "windows mobile";
+				  if (bIsIpad || bIsIphoneOs || bIsMidp || bIsUc7 || bIsUc || bIsAndroid || bIsCE || bIsWM) {//移动端
+				  	fnMobile();
+				  }else{
+				  	fnPc();
+				  }
+			}
+			isMoblie(
+				function(){
+					console.log("移动");
+					document.getElementById("c1").style.width = "100vw";
+				},
+				function(){
+					console.log("pc");
+				}
+			);
+			//按钮事件  
+			var ostart = document.getElementById('btn1');
+			var ostop = document.getElementById('btn2');
+			var oclear = document.getElementById('btn3');
+			ostart.onclick = function() {
+				obj1.start();
+			}
+			ostop.onclick = function() {
+				obj1.stop();
+			}
+			oclear.onclick = function() {
+				obj1.clear();
+			}
+
+			function CreateCanvasObject(canvasId, func) {
+				//返回的对象 包含节点Node 绘图环境GC 等属性 和 clear 等方法  
+				var obj = new Object();
+				var ocanvas = document.getElementById(canvasId);
+				var ocolor = '';
+				if(ocanvas.currentStyle)
+					ocolor = ocanvas.currentStyle['backgroundColor'];
+				else
+					ocolor = getComputedStyle(ocanvas, false)['backgroundColor'];
+
+				//这里要做判断 是否获取到canvas标签 否则返回 null  
+
+				//获取画布绘图环境  
+				var ocanvasGC = ocanvas.getContext('2d');
+				obj = {
+					Node: ocanvas,
+					GC: ocanvasGC,
+					timer: '',
+					bContinue: false,
+					fun: func,
+					color: ocolor,
+					clear: function() {
+						this.GC.clearRect(0, 0, this.Node.width, this.Node.height);
+					},
+					start: function() {
+						var oThis = this;
+						if(oThis.timer) {
+							oThis.stop();
+						}
+						oThis.bContinue = true;
+						var loop = function() {
+							oThis.fun(oThis);
+							if(oThis.bContinue) {
+								oThis.timer = setTimeout(loop, 10);
+							}
+						}
+						loop();
+//						console.log(1111);
+						
+					},
+					stop: function() {
+						clearTimeout(this.timer);
+						this.bContinue = false;
+					}
+				}
+				return obj;
+			}
+			//二维向量 可表示位置position(x,y)  速度 v(Vx,Vy) 加速度a(Gx,Gy)  
+			Vector2 = function(x, y) {
+				this.x = x;
+				this.y = y;
+			};
+			var degree = 0;
+
+			Vector2.prototype = {
+				copy: function() {
+					return new Vector2(this.x, this.y);
+				},
+				length: function() {
+					return Math.sqrt(this.x * this.x + this.y * this.y);
+				},
+				sqrLength: function() {
+					return this.x * this.x + this.y * this.y;
+				},
+				normalize: function() {
+					var inv = 1 / this.length();
+					return new Vector2(this.x * inv, this.y * inv);
+				},
+				negate: function() {
+					return new Vector2(-this.x, -this.y);
+				},
+				add: function(v) {
+					return new Vector2(this.x + v.x, this.y + v.y);
+				},
+				subtract: function(v) {
+					return new Vector2(this.x - v.x, this.y - v.y);
+				},
+				multiply: function(f) {
+					return new Vector2(this.x * f, this.y * f);
+				},
+				divide: function(f) {
+					var invf = 1 / f;
+					return new Vector2(this.x * invf, this.y * invf);
+				},
+				dot: function(v) {
+					return this.x * v.x + this.y * v.y;
+				}
+			};
+
+			
+			
+
+			function draw(obj) {
+				//obj.clear();  
+				//采用叠加递减效果  
+				obj.GC.fillStyle = "rgba(255,255,0,0.03)";
+				obj.GC.fillRect(0, 0, obj.Node.width, obj.Node.height);
+//				obj.GC.strokeStyle = '#72d6fc';
+				obj.GC.strokeStyle = '#1AA094';
+
+				var halfW = obj.Node.width / 2;
+				var halfH = obj.Node.height / 2;
+				console.log(halfW,halfH);
+				//扩散波动圆  
+				obj.GC.lineWidth = 1;
+				for(var k = 0; k < 5; k++) {
+					obj.GC.beginPath();
+//					obj.GC.arc(halfW, halfH, r1 + k, 0, Math.PI * 2, '#72d6fc', true);
+					obj.GC.arc(halfW, halfH, r1 + k, 0, Math.PI * 2, '#1AA094', true);
+					obj.GC.closePath();
+					obj.GC.stroke();
+
+					obj.GC.beginPath();
+					if(!bFirst)
+						obj.GC.arc(halfW, halfH, r2 + k, 0, Math.PI * 2, '#1AA094', true);
+					obj.GC.closePath();
+					obj.GC.stroke();
+				}
+				if(r1 > R) {
+					r1 = 0;
+				}
+				if(r2 > R) {
+					r2 = 0;
+					if(bFirst == true) {
+						bFirst = false;
+					}
+				}
+				r1++, r2++;
+
+				//旋转扫描线  
+				obj.GC.lineWidth = 6;
+				obj.GC.save();
+				obj.GC.translate(obj.Node.width / 2, obj.Node.height / 2);
+				obj.GC.rotate(degree * Math.PI / 180);
+				obj.GC.beginPath();
+				obj.GC.moveTo(0, -3);
+				obj.GC.lineTo(0, R);
+				obj.GC.closePath();
+				obj.GC.stroke();
+				obj.GC.restore();
+
+				//开始画网格  
+				for(var i = 0; i < obj.Node.width; i += 10) {
+					line(obj.GC, 'rgba(0,0,0,0.03)', 0.5, i + 0.5, 0, i + 0.5, obj.Node.height);
+				}
+				for(var j = 0; j < obj.Node.height; j += 10) {
+					line(obj.GC, 'rgba(0,0,0,0.03)', 0.5, 0, j + 0.5, obj.Node.width, j + 0.5);
+				}
+				//中心点  
+				obj.GC.fillStyle = '#000';
+				obj.GC.beginPath();
+				obj.GC.arc(halfW, halfH, 4, 0, Math.PI * 2, true);
+				obj.GC.closePath();
+				obj.GC.fill();
+
+				//呗探测到的小圆点  
+//				obj.GC.fillStyle = '#c00';
+//				obj.GC.beginPath();
+//				obj.GC.arc(halfW / 2, halfH / 2, 4, 0, Math.PI * 2, true);
+//				obj.GC.closePath();
+//				obj.GC.fill();
+////
+//				obj.GC.fillStyle = '#c00';
+//				obj.GC.beginPath();
+//				obj.GC.arc(dataArr[0][0], dataArr[0][1], 4, 0, Math.PI * 2, true);
+//				obj.GC.closePath();
+//				obj.GC.fill();
+				//每一秒随机生成一个点
+				for(var n = 0;n < dataArr.length;n++){
+					obj.GC.fillStyle = '#c00';
+					obj.GC.beginPath();
+					obj.GC.arc(dataArr[n][0], dataArr[n][1], 4, 0, Math.PI * 2, true);
+					obj.GC.closePath();
+					obj.GC.fill();
+				}
+				
+				
+				
+				degree++;
+			}
+			
+			//画线方法封装  
+			function line(gc, color, width, startX, startY, endX, endY) {
+				gc.strokeStyle = color;
+				gc.lineWidth = width;
+				gc.beginPath();
+				gc.moveTo(startX, startY);
+				gc.lineTo(endX, endY);
+				gc.closePath();
+				gc.stroke();
+			}
+			var obj1 = CreateCanvasObject('c1', draw);
+			var R = Math.sqrt(Math.pow(obj1.Node.width / 2, 2) + Math.pow(obj1.Node.height / 2, 2));
+			var r1 = 0,
+				r2 = R / 2,
+				bFirst = true;
+			//页面打开自动运行  
+			obj1.start();
+			//obj1.stop();
+			
+			//随机生成范围数字：min最小数字，max最大数字（打印数字为最小到最大的范围）
+			function randNum(min,max){
+			    var num = Math.floor(Math.random()*(max-min)+min);
+			    return num;
+			}
+	
+		</script>
+	</body>
+
+</html>

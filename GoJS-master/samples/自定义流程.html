@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Draggable Link</title>
+		<meta name="description" content="Drag a link to reconnect it. Nodes have custom Adornments for selection, resizing, and reshaping." />
+		<!-- Copyright 1998-2017 by Northwoods Software Corporation. -->
+		<meta charset="UTF-8">
+		<!--<script src="../../gojs/go-debug.js"></script>-->
+		<!--<script src="../release/go-debug.js" type="text/javascript" charset="utf-8"></script>-->
+		<script src="../release v1.7/go.js"></script>
+		<script id="code">
+			function init() {
+//				if(window.goSamples) goSamples(); // init for these samples -- you don't need to call this
+				var objGo = go.GraphObject.make; // for conciseness in defining templates
+				
+				myDiagram =
+					objGo(go.Diagram, "myDiagramDiv", // must name or refer to the DIV HTML element
+						{
+							grid: objGo(go.Panel, "Grid",
+								objGo(go.Shape, "LineH", {
+									stroke: "lightgray",
+									strokeWidth: 0.5
+								}),
+								objGo(go.Shape, "LineH", {
+									stroke: "gray",
+									strokeWidth: 0.5,
+									interval: 10
+								}),
+								objGo(go.Shape, "LineV", {
+									stroke: "lightgray",
+									strokeWidth: 0.5
+								}),
+								objGo(go.Shape, "LineV", {
+									stroke: "gray",
+									strokeWidth: 0.5,
+									interval: 10
+								})
+							),
+							allowDrop: true, // must be true to accept drops from the Palette
+							"draggingTool.dragsLink": true,
+							"draggingTool.isGridSnapEnabled": true,
+							"linkingTool.isUnconnectedLinkValid": true,
+							"linkingTool.portGravity": 20,
+							"relinkingTool.isUnconnectedLinkValid": true,
+							"relinkingTool.portGravity": 20,
+							"clickCreatingTool.archetypeNodeData": { text: "Node" }, //允许在画布上面双击的时候创建节点
+							"relinkingTool.fromHandleArchetype": objGo(go.Shape, "Diamond", {
+								segmentIndex: 0,
+								cursor: "pointer",
+								desiredSize: new go.Size(8, 8),
+								fill: "tomato",
+								stroke: "darkred"
+							}),
+							"relinkingTool.toHandleArchetype": objGo(go.Shape, "Diamond", {
+								segmentIndex: -1,
+								cursor: "pointer",
+								desiredSize: new go.Size(8, 8),
+								fill: "darkred",
+								stroke: "tomato"
+							}),
+							"linkReshapingTool.handleArchetype": objGo(go.Shape, "Diamond", {
+								desiredSize: new go.Size(7, 7),
+								fill: "lightblue",
+								stroke: "deepskyblue"
+							}),
+							rotatingTool: objGo(TopRotatingTool), // defined below
+							"rotatingTool.snapAngleMultiple": 15,
+							"rotatingTool.snapAngleEpsilon": 15,
+							"undoManager.isEnabled": true
+						});
+
+				// when the document is modified, add a "*" to the title and enable the "Save" button
+				myDiagram.addDiagramListener("Modified", function(e) {
+					var button = document.getElementById("SaveButton");
+					if(button) button.disabled = !myDiagram.isModified;
+					var idx = document.title.indexOf("*");
+					if(myDiagram.isModified) {
+						if(idx < 0) document.title += "*";
+					} else {
+						if(idx >= 0) document.title = document.title.substr(0, idx);
+					}
+				});
+
+				// Define a function for creating a "port" that is normally transparent.
+				// The "name" is used as the GraphObject.portId, the "spot" is used to control how links connect
+				// and where the port is positioned on the node, and the boolean "output" and "input" arguments
+				// control whether the user can draw links from or to the port.
+				function makePort(name, spot, output, input) {
+					// the port is basically just a small transparent square
+					return objGo(go.Shape, "Circle", {
+						fill: null, // not seen, by default; set to a translucent gray by showSmallPorts, defined below
+						stroke: null,
+						desiredSize: new go.Size(7, 7),
+						alignment: spot, // align the port on the main Shape
+						alignmentFocus: spot, // just inside the Shape
+						portId: name, // declare this object to be a "port"
+						fromSpot: spot,
+						toSpot: spot, // declare where links may connect at this port
+						fromLinkable: output,
+						toLinkable: input, // declare whether the user may draw links to/from here
+						cursor: "pointer" // show a different cursor to indicate potential link point
+					});
+				}
+
+				var nodeSelectionAdornmentTemplate =
+					objGo(go.Adornment, "Auto",
+						objGo(go.Shape, {
+							fill: null,
+							stroke: "deepskyblue",
+							strokeWidth: 1.5,
+							strokeDashArray: [4, 2]
+						}),
+						objGo(go.Placeholder)
+					);
+
+				var nodeResizeAdornmentTemplate =
+					objGo(go.Adornment, "Spot", {
+							locationSpot: go.Spot.Right
+						},
+						objGo(go.Placeholder),
+						objGo(go.Shape, {
+							alignment: go.Spot.TopLeft,
+							cursor: "nw-resize",
+							desiredSize: new go.Size(6, 6),
+							fill: "lightblue",
+							stroke: "deepskyblue"
+						}),
+						objGo(go.Shape, {
+							alignment: go.Spot.Top,
+							cursor: "n-resize",
+							desiredSize: new go.Size(6, 6),
+							fill: "lightblue",
+							stroke: "deepskyblue"
+						}),
+						objGo(go.Shape, {
+							alignment: go.Spot.TopRight,
+							cursor: "ne-resize",
+							desiredSize: new go.Size(6, 6),
+							fill: "lightblue",
+							stroke: "deepskyblue"
+						}),
+
+						objGo(go.Shape, {
+							alignment: go.Spot.Left,
+							cursor: "w-resize",
+							desiredSize: new go.Size(6, 6),
+							fill: "lightblue",
+							stroke: "deepskyblue"
+						}),
+						objGo(go.Shape, {
+							alignment: go.Spot.Right,
+							cursor: "e-resize",
+							desiredSize: new go.Size(6, 6),
+							fill: "lightblue",
+							stroke: "deepskyblue"
+						}),
+
+						objGo(go.Shape, {
+							alignment: go.Spot.BottomLeft,
+							cursor: "se-resize",
+							desiredSize: new go.Size(6, 6),
+							fill: "lightblue",
+							stroke: "deepskyblue"
+						}),
+						objGo(go.Shape, {
+							alignment: go.Spot.Bottom,
+							cursor: "s-resize",
+							desiredSize: new go.Size(6, 6),
+							fill: "lightblue",
+							stroke: "deepskyblue"
+						}),
+						objGo(go.Shape, {
+							alignment: go.Spot.BottomRight,
+							cursor: "sw-resize",
+							desiredSize: new go.Size(6, 6),
+							fill: "lightblue",
+							stroke: "deepskyblue"
+						})
+					);
+
+				var nodeRotateAdornmentTemplate =
+					objGo(go.Adornment, {
+							locationSpot: go.Spot.Center,
+							locationObjectName: "CIRCLE"
+						},
+						objGo(go.Shape, "Circle", {
+							name: "CIRCLE",
+							cursor: "pointer",
+							desiredSize: new go.Size(7, 7),
+							fill: "lightblue",
+							stroke: "deepskyblue"
+						}),
+						objGo(go.Shape, {
+							geometryString: "M3.5 7 L3.5 30",
+							isGeometryPositioned: true,
+							stroke: "deepskyblue",
+							strokeWidth: 1.5,
+							strokeDashArray: [4, 2]
+						})
+					);
+
+				myDiagram.nodeTemplate =
+					objGo(go.Node, "Spot", {
+							locationSpot: go.Spot.Center
+						},
+						new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify), {
+							selectable: true,
+							selectionAdornmentTemplate: nodeSelectionAdornmentTemplate
+						}, {
+							resizable: true,
+							resizeObjectName: "PANEL",
+							resizeAdornmentTemplate: nodeResizeAdornmentTemplate
+						}, {
+							rotatable: true,
+							rotateAdornmentTemplate: nodeRotateAdornmentTemplate
+						},
+						new go.Binding("angle").makeTwoWay(),
+						// 主对象是一个面板，围绕着一个带有形状的TextBlock
+						objGo(go.Panel, "Auto", {
+								name: "PANEL"
+							},
+							new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify),
+							objGo(go.Shape, "Rectangle", // default figure
+								{
+									portId: "", // 默认端口：如果链接数据上没有位置，请使用最接近的端口
+									fromLinkable: true,
+									toLinkable: true,
+									cursor: "pointer",
+									fill: "white", // default color
+									strokeWidth: 2
+								},
+								new go.Binding("figure"),
+								new go.Binding("fill")),
+							objGo(go.TextBlock, {
+									font: "bold 11pt Helvetica, Arial, sans-serif",
+									margin: 8,
+									maxSize: new go.Size(160, NaN),
+									wrap: go.TextBlock.WrapFit,
+									editable: true
+								},
+								new go.Binding("text").makeTwoWay())
+						),
+						// four small named ports, one on each side:
+						makePort("T", go.Spot.Top, false, true),
+						makePort("L", go.Spot.Left, true, true),
+						makePort("R", go.Spot.Right, true, true),
+						makePort("B", go.Spot.Bottom, true, false), { // 处理鼠标进入/离开事件以显示/隐藏端口
+							mouseEnter: function(e, node) {
+								showSmallPorts(node, true);
+							},
+							mouseLeave: function(e, node) {
+								showSmallPorts(node, false);
+							}
+						}
+					);
+
+				function showSmallPorts(node, show) {
+					node.ports.each(function(port) {
+						if(port.portId !== "") { // 不要改变默认端口，这是一个大的形状
+							port.fill = show ? "rgba(0,0,0,.3)" : null;
+						}
+					});
+				}
+
+				var linkSelectionAdornmentTemplate = objGo(go.Adornment, "Link",
+					objGo(go.Shape,
+						// isPanelMain declares that this Shape shares the Link.geometry
+						{
+							isPanelMain: true,
+							fill: null,
+							stroke: "deepskyblue",
+							strokeWidth: 0
+						}) // 使用选择对象的strokeWidth
+				);
+
+				myDiagram.linkTemplate =
+					objGo(go.Link, // 整个链接面板
+						{
+							selectable: true,
+							selectionAdornmentTemplate: linkSelectionAdornmentTemplate
+						}, {
+							relinkableFrom: true,
+							relinkableTo: true,
+							reshapable: true
+						}, {
+							routing: go.Link.AvoidsNodes,
+							curve: go.Link.JumpOver,
+							corner: 5,
+							toShortLength: 4
+						},
+						new go.Binding("points").makeTwoWay(),
+						objGo(go.Shape, // 链接路径形状
+							{
+								isPanelMain: true,
+								strokeWidth: 2
+							}),
+						objGo(go.Shape, // 箭头
+							{
+								toArrow: "Standard",
+								stroke: null
+							}),
+						objGo(go.Panel, "Auto",
+							new go.Binding("visible", "isSelected").ofObject(),
+							objGo(go.Shape, "RoundedRectangle", // 链接的形状
+								{
+									fill: "#F8F8F8",
+									stroke: null
+								}),
+							objGo(go.TextBlock, {
+									textAlign: "center",
+									font: "10pt helvetica, arial, sans-serif",
+									stroke: "#919191",
+									margin: 2,
+									minSize: new go.Size(10, NaN),
+									editable: true
+								},
+								new go.Binding("text").makeTwoWay())
+						)
+					);
+
+				load(); // 从一些JSON文本加载初始图表
+
+				// 初始化页面左边的调色板
+				myPalette =
+					objGo(
+						go.Palette,
+						"myPaletteDiv", // 必须命名或引用DIV HTML元素
+						{
+							maxSelectionCount: 1,
+							nodeTemplateMap: myDiagram.nodeTemplateMap, // 共享myDiagram使用的模板
+							// 简化链接模板，就在这个调色板中
+							linkTemplate: objGo(
+								go.Link, { // 因为GridLayout。对齐是位置，节点有locationSpot==Spot.Center，
+									// 为了以同样的方式排列链接我们必须假装链接有相同的位置点
+									locationSpot: go.Spot.Center,
+									selectionAdornmentTemplate: objGo(
+										go.Adornment,
+										"Link", {
+											locationSpot: go.Spot.Center
+										},
+										objGo(
+											go.Shape, {
+												isPanelMain: true,
+												fill: null,
+												stroke: "deepskyblue",
+												strokeWidth: 0
+											}
+										),
+										// 箭头
+										objGo(go.Shape, {
+											toArrow: "Standard",
+											stroke: null
+										})
+									)
+								}, {
+									routing: go.Link.AvoidsNodes,
+									curve: go.Link.JumpOver,
+									corner: 5,
+									toShortLength: 4
+								},
+								new go.Binding("points"),
+								objGo(go.Shape, // 链接路径形状
+									{
+										isPanelMain: true,
+										strokeWidth: 2
+									}),
+								// 箭头
+								objGo(go.Shape, {
+									toArrow: "Standard",
+									stroke: null
+								})
+							),
+							model: new go.GraphLinksModel(
+								[ // 指定调色板的内容
+									{
+										text: "Start",
+										figure: "Circle",
+										fill: "#00AD5F"
+									},
+									{
+										text: "Step"
+									},
+									{
+										text: "mmp",
+										figure: "Ellipse",
+										fill: "red"
+									},
+									{
+										text: "DB",
+										figure: "Database",
+										fill: "lightgray"
+									},
+									{
+										text: "???",
+										figure: "Diamond",
+										fill: "lightskyblue"
+									},
+									{
+										text: "End",
+										figure: "Circle",
+										fill: "#CE0620"
+									},
+									{
+										text: "Comment",
+										figure: "RoundedRectangle",
+										fill: "lightyellow"
+									},
+									{
+//										text: "yinyang",
+										figure: "YinYang",
+										fill: "black"
+									},
+								], [{ // 面板也有一个断开连接的链接，用户可以拖拽
+									points: new go.List(go.Point).addAll([new go.Point(0, 0), new go.Point(30, 0), new go.Point(30, 40), new go.Point(60, 40)])
+								}]
+							)
+						}
+					);
+			}
+
+			function TopRotatingTool() {
+				go.RotatingTool.call(this);
+			}
+			go.Diagram.inherit(TopRotatingTool, go.RotatingTool);
+
+			/** @override */
+			TopRotatingTool.prototype.updateAdornments = function(part) {
+				go.RotatingTool.prototype.updateAdornments.call(this, part);
+				var adornment = part.findAdornment("Rotating");
+				if(adornment !== null) {
+					adornment.location = part.rotateObject.getDocumentPoint(new go.Spot(0.5, 0, 0, -30)); // above middle top
+				}
+			};
+
+			/** @override */
+			TopRotatingTool.prototype.rotate = function(newangle) {
+				go.RotatingTool.prototype.rotate.call(this, newangle + 90);
+			};
+			// end of TopRotatingTool class
+
+			// 用JSON格式显示图表的模型，用户可以编辑
+			function save() {
+				saveDiagramProperties(); // do this first, before writing to JSON
+				document.getElementById("mySavedModel").value = myDiagram.model.toJson();
+				//本地存储
+				localStorage.setItem("diyFlowData", myDiagram.model.toJson());
+				myDiagram.isModified = false;
+			}
+
+			function load() {
+				myDiagram.model = go.Model.fromJson(document.getElementById("mySavedModel").value);
+				loadDiagramProperties(); // 在模型之后做这个。模型数据已经被引入内存中
+			}
+
+			function saveDiagramProperties() {
+				myDiagram.model.modelData.position = go.Point.stringify(myDiagram.position);
+			}
+
+			function loadDiagramProperties(e) {
+				// set Diagram.initialPosition, not Diagram.position, to handle initialization side-effects
+				var pos = myDiagram.model.modelData.position;
+				if(pos) myDiagram.initialPosition = go.Point.parse(pos);
+			}
+			
+		
+		</script>
+	</head>
+
+	<body onload="init()">
+		<div id="sample">
+			<div style="width:100%; white-space:nowrap;">
+				<span style="display: inline-block; vertical-align: top; width:105px">
+			      <div id="myPaletteDiv" style="border: solid 1px black; height: 620px"></div>
+			    </span>
+
+				<span style="display: inline-block; vertical-align: top; width:80%">
+			      <div id="myDiagramDiv" style="border: solid 1px black; height: 620px"></div>
+			    </span>
+			</div>
+			<p>
+				这个示例演示了用户拖拽链接的能力，就好像它是一个节点一样。当链接的两端通过一个有效的端口时，端口会被高亮显示。
+			</p>
+			<p>
+				通过设置一些或全部以下属性来启用链接拖动功能：
+				<a>DraggingTool.dragsLink</a>,
+				<a>LinkingTool.isUnconnectedLinkValid</a>, and
+				<a>RelinkingTool.isUnconnectedLinkValid</a>.
+			</p>
+			<p>
+				注意，在调色板中有一个链接，这样它也可以被拖出并放到主图上。因为当两端没有连接到节点时，链接不会自动被路由，所以当定义调色板项目时，路线会显式地提供。
+			</p>
+			<p>
+				这也展示了几个定制的装饰：
+				<a>Part.selectionAdornmentTemplate</a>,
+				<a>Part.resizeAdornmentTemplate</a>, and
+				<a>Part.rotateAdornmentTemplate</a>.
+			</p>
+			<p>
+				双击可生成默认节点
+			</p>
+			<p>
+				ctrl+z键，可以撤销
+				<br />
+				delect键可以删除
+			</p>
+			<p>
+				最后，这个示例演示了保存和恢复
+				<a>Diagram.position</a> as a property on the
+				<a>Model.modelData</a> object that is automatically saved and restored when calling
+				<a>Model.toJson</a>
+				and
+				<a>Model.fromJson</a>.
+			</p>
+			<div>
+				<div>
+					<button id="SaveButton" onclick="save()">Save</button>
+					<button onclick="load()">Load</button> Diagram Model saved in JSON format:
+				</div>
+				<textarea id="mySavedModel" style="width:100%;height:300px">
+					{ "class": "go.GraphLinksModel",
+					  "linkFromPortIdProperty": "fromPort",
+					  "linkToPortIdProperty": "toPort",
+					  "nodeDataArray": [
+					 ],
+					  "linkDataArray": [
+					 ]}
+			    </textarea>
+			</div>
+		</div>
+		
+		<script type="text/javascript">
+			
+			if(localStorage.getItem("diyFlowData")) {
+				document.getElementById("mySavedModel").value = localStorage.getItem("diyFlowData");
+			}
+		
+		</script>
+	</body>
+
+</html>

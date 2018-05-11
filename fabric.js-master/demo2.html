@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			#main {
+				border: 1px solid #ddd;
+			}
+		</style>
+	</head>
+
+	<body>
+		<canvas class="main" id="main" width="800" height="800"></canvas>
+		<script src="dist/fabric.js" type="text/javascript" charset="utf-8"></script>
+		<script src="src/gradient.class.js" type="text/javascript" charset="utf-8"></script>
+		<script src="dist/underscore.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var canvas = new fabric.Canvas('main');
+			//绘制圆形  
+			var circle = new fabric.Circle({
+				radius: 100,
+				fill: '#eef',
+				scaleY: 0.5,
+				originX: 'center', //调整中心点的X轴坐标  
+				originY: 'center' //调整中心点的Y轴坐标  
+			});
+			//绘制文本  
+			var text = new fabric.Text('Hello World', {
+				fontSize: 30,
+				originX: 'center',
+				originY: 'center'
+			})
+			//进行组合  
+			var group = new fabric.Group([circle, text], {
+				left: 150,
+				top: 100,
+				angle: 10
+			})
+
+			canvas.add(group);
+		</script>
+	</body>
+
+</html>

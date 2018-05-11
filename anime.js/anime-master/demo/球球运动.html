@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>球体弹跳</title>
+		<style type="text/css">
+			* {
+				box-sizing: border-box;
+			}
+			
+			body {
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+				background-color: black;
+			}
+			
+			.wrapper {
+				height: 80vh;
+				width: 45%;
+				margin: 0;
+				padding: 0;
+				position: relative;
+				overflow: hidden;
+				border: 1px solid blue;
+				background-color: lightblue;
+				color: #444;
+				display: inline-block;
+			}
+			
+			.ball {
+				height: 200px;
+				width: 200px;
+				position: absolute;
+				top: 20px;
+				bottom: 0;
+				left: calc(50% - 100px);
+				background-color: darkblue;
+				border-radius: 50%;
+			}
+			
+			.mmp{
+				width: 100px;
+				height: 100px;
+				background: red;
+				border-radius: 50%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div>
+			<button type="button" id="play">play</button>
+			<button type="button" id="pause">pause</button>
+			<button type="button" id="restart">restart</button>
+		</div>
+		<section class="wrapper">
+			<div class="ball"></div>
+		</section>
+		
+		
+		<div id="cssSelector" class="wrapper">
+		  <div class="line">
+		    <div class="square el mmp"></div>
+		  </div>
+		</div>
+
+		<script src="../anime.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var ball = anime({
+				targets: ['.ball'],
+				translateY: '50vh',//动画垂直过渡平移
+				duration: 300,//动画运行时间
+				loop: true,
+				direction: 'alternate',//direction属性定义是否应该轮流反向播放动画。有三个值default、alternate和reverse。alternate表示动画应该轮流反向播放。reverse表示反方向运行。
+				easing: 'easeInCubic',//最后一个属性是easing，它是用来定义动画运行速度曲线的，与CSS3中的动画曲线一样。
+				autoplay: false,//不加默认true，指的是动画加载的时候默认是否启动
+				scaleX: {
+					value: 1.25, //代表缩放的值(现实球掉落地上之后变形)
+					duration: 150, // 运行时间
+					delay: 268 //延迟多久执行
+				},
+				scaleY: {
+					value: 0.75, //代表缩放的值(现实球掉落地上之后变形)
+					duration: 150, // 运行时间
+					delay: 268 //延迟多久执行
+				}
+			});
+			
+			console.log(anime.easings);
+			
+			//开启
+			document.getElementById("play").onclick = function(){
+				ball.play();
+			}
+			//暂停
+			document.getElementById("pause").onclick = function(){
+				ball.pause();
+			}
+			//重新启动
+			document.getElementById("restart").onclick = function(){
+				ball.restart();
+			}
+			
+//			var n = 500;
+//			var ball2 = anime({
+//				targets: ['.el'],
+//				translateY:n,
+//				complete: function() {
+//					n -= 100;
+//					setTimeout(function(){
+//						ball2.restart();
+//					},100);
+//					
+//					console.log(n);
+//				}
+//			});
+		</script>
+	</body>
+
+</html>

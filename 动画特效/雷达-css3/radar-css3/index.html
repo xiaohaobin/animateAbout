@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>CSS3雷达</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<link rel="stylesheet" href="style.css">
+	</head>
+
+	<body>
+		<div class="radar">
+			<div id="kuo"></div>
+		</div>
+		
+		<!--<script src="../../js/require.js" type="text/javascript" charset="utf-8"></script>-->
+		<!--<script type="text/javascript">
+			require.config({
+				baseUrl: '../../js',				
+			});
+			require(['underscore', 'jquery.min','underscore.string'], function(underscore, $ ) {
+				//引入underscore.string，集成underscore
+					_.str = require('underscore.string');
+					_.mixin(_.str.exports());
+					
+					//字符串
+					console.log(_.numberFormat(1000, 5));
+					
+					console.log(
+						"判断数组元素是否有某个值",_.contains([1, 2, 3], 3)
+					);
+					
+					var n = 0;
+					function loop(){
+						n++;
+						$(".radar").append($('<div class="blips"></div>')).css({
+							"width":"10px",
+							"height":"10px",
+							"borderRadius":"50%",
+							"position":"absolute",
+							"left":l,
+							"top":t
+						})
+					}
+			});
+		</script>-->
+	</body>
+
+</html>
